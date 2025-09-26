@@ -12,11 +12,11 @@ import matplotlib
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import skimage
-from skimage import data,io, img_as_float, color,morphology, img_as_ubyte,segmentation, measure
+from skimage import io, img_as_float, color,morphology, img_as_ubyte,segmentation, measure
 from scipy import signal, ndimage
 import math
 import inspect
-
+matplotlib.use('TkAgg')
 #%%
 # Perbaikan pada fungsi visual_callback_2d
 def visual_callback_2d(background, fig=None):
@@ -114,11 +114,6 @@ def Heaviside(phi):
     H = (1/np.pi)*np.arctan(phi)+0.5
     return H
 
-def Dirac(phi):
-    a = 1 + phi**2
-    D = (1/np.pi)
-    Dir = D/a
-    return Dir
 
 def FittingAverage(img, phi):
     Hphi = Heaviside(phi)
@@ -127,10 +122,15 @@ def FittingAverage(img, phi):
     cb = np.sum(np.multiply(img,cHphi))
     c1 = ca/(np.sum(Hphi))
     c2 = cb/(np.sum(cHphi))
-    
+    return (c1,c2)
     global local_vars
     local_vars = inspect.currentframe().f_locals
-    return (c1,c2)
+    
+def Dirac(phi):
+    a = 1 + phi**2
+    D = (1/np.pi)
+    Dir = D/a
+    return Dir
 
 def Convergence(phi,iteration=0,absR=0,teta=0.1,maxs=50, preArea= 0, preLength = 0):
     phip = np.where(phi<0, 1, 0)
@@ -145,7 +145,7 @@ def Convergence(phi,iteration=0,absR=0,teta=0.1,maxs=50, preArea= 0, preLength =
         Converge = False
     return (Converge,Area,Length,ErrorArea,ErrorLength)
 
-def ObDetection(img, phi):
+def ObDetection(phi):
     g = np.where(phi<=0, 1, 0)
     se = estructurant(3)
     g1 = img_as_ubyte(g)
@@ -180,8 +180,9 @@ local_vars = {}
 maxs = 150
 dt = 10
 teta = 1
-seMorf = morphology.disk(1)
-kernel = matlab_style_gauss2D((3,3),1)
+seMorf = morphology.disk(2)
+print(seMorf)
+kernel = matlab_style_gauss2D((5,5),1)
 #%% Input
 image = cv2.imread(r'5.bmp')
 GT_image = io.imread((r'5.bmp'),as_gray=True)
@@ -202,10 +203,31 @@ preArea = 0
 beta = 0
 i = 1
 callback = visual_callback_2d(image)
+#untuk test
+# phi = Neumann(phi)
+# div,absR = Curvature(phi)
+# c1,c2 = FittingAverage(image, phi)
+# AACMR = div*absR + (1-abs(beta)) * (image - (c1+c2)/2) + beta*g*absR
+# phi = phi + dt*AACMR
+# phi = np.sign(phi)
+# phi = signal.convolve2d(phi,kernel, mode='same')
+    
+
+# #%% Morph Regularization
+# phi = np.where(phi > 0, 1, 0)
+# cv2.imshow("Result", phi)
+# cv2.imshow("kappa", div)
+# cv2.imshow("absR", absR)
+# print("neumann", phi[100,100])
+# print("kappa", div[100,100])
+# print("absR", absR[100,100])
+# print("c1 c2", c1, c2, type(c1), type(c2))
+# cv2.waitKey(0)
+
 while i>=0:
     # Beta[i-1] = beta
     phi = Neumann(phi)
-    
+    print("iterasi", i)
     div,absR = Curvature(phi)
     c1,c2 = FittingAverage(image, phi)
     
@@ -226,13 +248,14 @@ while i>=0:
     phi2 = cv2.dilate((cv2.erode(phi2,seMorf)),seMorf)
     phi = morphology.erosion((morphology.dilation(phi,seMorf)),seMorf)
     phi2 = cv2.erode(cv2.dilate(phi2,seMorf),seMorf)
-    
+    phi=phi2
     phi = (np.where(phi > 0, 1, -1)).astype(float)
     
     if beta==0:
         Converge,preArea,preLength,ErrorArea,ErrorLength=Convergence(phi, iteration=i, absR=absR, teta=teta, preArea=preArea, preLength=preLength)
         if Converge:
-            phiShrink,gShrink,initialShrink = ObDetection(image,phi)
+            print("Terdeteksi")
+            phiShrink,gShrink,initialShrink = ObDetection(phi)
             g = 1-gShrink
             phi = phiShrink
             beta = 1
@@ -244,8 +267,8 @@ while i>=0:
             break
         g = 1-gShrink
         phi = phiShrink
-        
-            
+    cv2.imshow("Ressult", phi)
+    i += 1     
     # kernel = matlab_style_gauss2D((5,5),3)
     # phi = signal.convolve2d(phi,kernel, mode='same')
     
@@ -257,9 +280,9 @@ while i>=0:
     #     break
     # error[0,i] = ErrorArea
     # error[1,i] = ErrorLength
-    i += 1
+    
 
 # cv2.imshow("Result", phi)
-# cv2.waitKey(0)
-plt.imshow(phiShrink,cmap='gray')
-plt.show()
+cv2.waitKey(0)
+# plt.imshow(phiShrink,cmap='gray')
+# plt.show()
