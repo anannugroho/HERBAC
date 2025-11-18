@@ -1,5 +1,5 @@
 # Please acknowledge this work by citing the following publication:
-Anan Nugroho, et al. “Combinatorial active contour–bilateral filter for ultrasound image segmentation.” *Journal of Medical Imaging*, 7(5), 057003 (2020).  
+[Anan Nugroho, et al. “Combinatorial active contour–bilateral filter for ultrasound image segmentation.” *Journal of Medical Imaging*, 7(5), 057003 (2020)](https://doi.org/10.1117/1.JMI.7.5.057003).  
 [https://www.spiedigitallibrary.org/journals/journal-of-medical-imaging/volume-7/issue-5/057003/10.1117/1.JMI.7.5.057003](https://doi.org/10.1117/1.JMI.7.5.057003)
 
 Anan Nugroho, et al. “Title of IJIL Paper.” *International Journal of Image and Language*, 2021.  
